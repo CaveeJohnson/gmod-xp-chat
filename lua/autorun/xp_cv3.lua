@@ -38,7 +38,7 @@ if SERVER then return end
 
 hook.Add("CanPlayerUseTag", "chathud.restrict", function(ply, tag, args)
 	if tag:StartWith("dev_") and not ply:IsAdmin() then return false end
-	if convar_limited_tags:GetBool() and tag ~= "color" then return false end
+	if convar_limited_tags:GetBool() and tag ~= "color" then return ply:IsAdmin() end
 end)
 
 local gm = GM or GAMEMODE
