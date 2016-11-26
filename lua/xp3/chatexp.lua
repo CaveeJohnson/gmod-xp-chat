@@ -116,7 +116,7 @@ if CLIENT then
 			net.WriteData(cdata, #cdata)
 
 			net.WriteUInt(mode, 8)
-			net.WriteUInt(mode_data or 0, 8)
+			net.WriteUInt(mode_data or 0, 16)
 		net.SendToServer()
 		end)
 
@@ -144,7 +144,7 @@ if CLIENT then
 		local data 	= net.ReadData(len)
 
 		local mode 	= net.ReadUInt(8)
-		local mode_data = net.ReadUInt(8)
+		local mode_data = net.ReadUInt(16)
 
 		data = util.Decompress(data)
 
