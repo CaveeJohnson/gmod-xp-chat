@@ -1,5 +1,6 @@
-class	= include"xp3/class.lua"
-luadata	= include"xp3/luadata.lua"
+local function includec(...) AddCSLuaFile(...) return include(...) end
+class	= includec"xp3/class.lua"
+luadata	= includec"xp3/luadata.lua"
 
 function _f(d)
 	return isfunction(d) and d() or d
@@ -24,7 +25,7 @@ function utf_totable(str)
 	return tbl
 end
 
-include"xp3/chatexp.lua"
+includec"xp3/chatexp.lua"
 
 local convar_custom_handle = CreateConVar("xp_chat_force_source_handle", "0", {FCVAR_REPLICATED, FCVAR_ARCHIVE})
 local convar_limited_tags = CreateConVar("xp_chat_limited_tags", "0", {FCVAR_REPLICATED, FCVAR_ARCHIVE})
@@ -34,40 +35,51 @@ hook.Add("ChatShouldHandle", "chatexp.compat", function(handler, msg, mode)
 	if convar_custom_handle:GetBool() then return false end
 end)
 
-if SERVER then return end
+if SERVER then
+	AddCSLuaFile"xp3/markup.lua"
+	AddCSLuaFile"xp3/chathud.lua"
+	AddCSLuaFile"xp3/chatbox.lua"
+return end
 
 hook.Add("CanPlayerUseTag", "chathud.restrict", function(ply, tag, args)
 	if tag:StartWith("dev_") and not ply:IsAdmin() then return false end
 	if convar_limited_tags:GetBool() and tag ~= "color" then return ply:IsAdmin() end
 end)
 
-local gm = GM or GAMEMODE
-chatexp._oldGamemodeHook = chatexp._oldGamemodeHook or gm.OnPlayerChat
-function gm:OnPlayerChat(ply, msg, mode, dead, mode_data)
-	chatexp.LastPlayer = ply
+local function do_hook()
+	local gm = GM or GAMEMODE
+	if not gm then return end
+	
+	chatexp._oldGamemodeHook = chatexp._oldGamemodeHook or gm.OnPlayerChat
+	function gm:OnPlayerChat(ply, msg, mode, dead, mode_data)
+		chatexp.LastPlayer = ply
 
-	if hook.Run("ChatShouldHandle", "chatexp", msg, mode) == false then
-		return chatexp._oldGamemodeHook(self, ply, msg, mode, dead)
+		if hook.Run("ChatShouldHandle", "chatexp", msg, mode) == false then
+			return chatexp._oldGamemodeHook(self, ply, msg, mode, dead)
+		end
+
+		if mode == true  then mode = CHATMODE_TEAM end
+		if mode == false then mode = CHATMODE_DEFAULT end
+
+		local msgmode = chatexp.Modes[mode]
+		local tbl = {}
+
+		local ret
+		if msgmode.Handle then
+			ret = msgmode.Handle(tbl, ply, msg, dead, mode_data)
+		else -- Some modes may just be a filter
+			ret = chatexp.Modes[CHATMODE_DEFAULT].Handle(tbl, ply, msg, dead, mode_data)
+		end
+
+		if ret == false then return true end
+
+		chat.AddText(unpack(tbl))
+		return true
 	end
-
-	if mode == true  then mode = CHATMODE_TEAM end
-	if mode == false then mode = CHATMODE_DEFAULT end
-
-	local msgmode = chatexp.Modes[mode]
-	local tbl = {}
-
-	local ret
-	if msgmode.Handle then
-		ret = msgmode.Handle(tbl, ply, msg, dead, mode_data)
-	else -- Some modes may just be a filter
-		ret = chatexp.Modes[CHATMODE_DEFAULT].Handle(tbl, ply, msg, dead, mode_data)
-	end
-
-	if ret == false then return true end
-
-	chat.AddText(unpack(tbl))
-	return true
 end
+
+do_hook()
+hook.Add("InitPostEntity", "xp.do_hook", do_hook)
 
 if chatbox and IsValid(chatbox.frame) then chatbox.frame:Close() end
 
@@ -142,6 +154,8 @@ function chat.AddText(...)
 	chat.old_text(...)
 
 	chathud:AddText(...)
+	
+	chat.PlaySound()
 end
 
 local green = Color(120, 219, 87)
