@@ -287,7 +287,7 @@ function chathud:Draw()
 		local alpha = markup.alpha
 		if alpha > 0 then
 			surface.SetAlphaMultiplier(alpha / 255)
-			matrix:SetTranslation(Vector(chathud.x, markup.y or 0, 0))
+			matrix:SetTranslation(Vector((pace and pace.IsActive() and pace.Editor:GetAlpha() ~= 0 and chathud.x + pace.Editor:GetWide() or chathud.x), markup.y or 0, 0))
 			cam.PushModelMatrix(matrix)
 			local ok, why = pcall(markup.Draw, markup)
 			if not ok then
