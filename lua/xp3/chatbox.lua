@@ -115,6 +115,68 @@ local function quick_parse(str)
 	return ret
 end
 
+-- Link code is from qchat/EPOE.
+local function CheckFor(tbl, a, b)
+	local a_len = #a
+	local res, endpos = true, 1
+
+	while res and endpos < a_len do
+		res, endpos = a:find(b, endpos)
+
+		if res then
+			tbl[#tbl + 1] = {res, endpos}
+		end
+	end
+end
+
+local function AppendTextLink(a, callback)
+	local result = {}
+
+	CheckFor(result, a, "https?://[^%s%\"]+")
+	CheckFor(result, a, "ftp://[^%s%\"]+")
+	CheckFor(result, a, "steam://[^%s%\"]+")
+
+	if #result == 0 then return false end
+
+	table.sort(result, function(a, b) return a[1] < b[1] end)
+
+	-- Fix overlaps
+	local _l, _r
+	for k, tbl in ipairs(result) do
+		local l, r = tbl[1], tbl[2]
+
+		if not _l then
+			_l, _r = tbl[1], tbl[2]
+			continue
+		end
+
+		if l < _r then table.remove(result, k) end
+
+		_l, _r = tbl[1], tbl[2]
+	end
+
+	local function TEX(str) callback(false, str) end
+	local function LNK(str) callback(true, str) end
+
+	local offset = 1
+	local right
+
+	for _, tbl in ipairs(result) do
+		local l, r = tbl[1], tbl[2]
+		local link = a:sub(l, r)
+		local left = a:sub(offset, l - 1)
+		right = a:sub(r + 1, -1)
+		offset = r + 1
+
+		TEX(left)
+		LNK(link)
+	end
+
+	TEX(right)
+
+	return true
+end
+
 function chatbox.ParseInto(feed, ...)
 	local tbl = {...}
 
@@ -141,7 +203,21 @@ function chatbox.ParseInto(feed, ...)
 				feed:AppendText(quick_parse(name))
 			end
 		elseif v ~= nil then
-			feed:AppendText(quick_parse(tostring(v)))
+			local function linkAppend(islink, text)
+				if islink then
+					feed:InsertClickableTextStart(text)
+						feed:AppendText(text)
+					feed:InsertClickableTextEnd()
+				return end
+
+				feed:AppendText(text)
+			end
+
+			local res = AppendTextLink(tostring(v), linkAppend)
+
+			if not res then
+				feed:AppendText(quick_parse(tostring(v)))
+			end
 		end
 	end
 
