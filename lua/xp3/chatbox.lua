@@ -226,7 +226,7 @@ function chatbox.BuildTabChat(self, a)
 				self.chat.input.OnKeyCodeTyped = input_type(
 				function(pan, txt)
 					if txt ~= "" then
-						local team = CHATMODE_TEAM and chatbox.mode == CHATMODE_TEAM or chatbox.mode == true
+						local team = CHATMODE_TEAM and chatbox.mode == CHATMODE_TEAM or chatbox.mode == false
 
 						if chatexp and hook.Run("ChatShouldHandle", "chatexp", txt, chatbox.mode) ~= false then
 							chatexp.Say(txt, chatbox.mode)
