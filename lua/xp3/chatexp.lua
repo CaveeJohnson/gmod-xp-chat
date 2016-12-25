@@ -211,7 +211,7 @@ else -- CLIENT
 			net.WriteData(cdata, #cdata)
 
 			net.WriteUInt(mode, 8)
-			net.WriteUInt(mode_data, 8)
+			net.WriteUInt(mode_data, 16)
 
 			if net.HasOverflowed() then
 				Msg"CEXP " print("Net overflow -> '" .. data .. "'")
@@ -225,7 +225,7 @@ else -- CLIENT
 		local cdata	= net.ReadData(len)
 
 		local mode	= net.ReadUInt(8)
-		local mode_data = net.ReadUInt(8)
+		local mode_data = net.ReadUInt(16)
 
 		local data = util.Decompress(cdata)
 

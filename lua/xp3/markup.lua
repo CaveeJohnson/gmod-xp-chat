@@ -120,7 +120,7 @@ function Text:MakeCharInfo(markup, buffer, data)
 			x = x + (char == "\t" and tabwidth or cw)
 		continue end
 		if char == "\n" or char == "\r" then
-			print ("force newline")
+			--print ("force newline")
 			if buffer.newlineSize then
 				if buffer.newlineSize > newline then
 					_newline = buffer.newlineSize
@@ -135,7 +135,7 @@ function Text:MakeCharInfo(markup, buffer, data)
 		continue end
 
 		if x + cw > w then
-			print ("wordwrap newline")
+			--print ("wordwrap newline")
 			x, y = 0, y + _newline
 			if _newline + y > h then
 				h = _newline + y
@@ -147,7 +147,7 @@ function Text:MakeCharInfo(markup, buffer, data)
 		x = x + cw
 
 		if ch + y > h then
-			print ("increase element height by ch")
+			--print ("increase element height by ch")
 			h = ch + y
 		end
 	end
