@@ -11,8 +11,8 @@ chatbox.settings = {
 chatbox.accent_color	= Color(255, 192, 203, 255)
 chatbox.back_color		= Color(000, 000, 000, 200)
 chatbox.input_color		= Color(000, 000, 000, 150)
-chatbox.box_font			= "DermaDefaultBold"
-chatbox.feed_font			= "ChatFont"
+chatbox.box_font			= CreateClientConVar("xp_chat_box_font","DermaDefaultBold",true,false,"Changes the Fonts of the chatbox itself.")
+chatbox.feed_font			= CreateClientConVar("xp_chat_box_font","ChatFont",true,false,"Changes the Font of the text displayed inside the chatbox.")
 
 local CONFIG_FILE = "xpression_config.lua"
 do
