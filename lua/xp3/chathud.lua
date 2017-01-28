@@ -6,14 +6,14 @@ local Msg = function(...) MsgC(col, ...)  end
 surface.CreateFont("chathud_18", {
 	font = "Roboto",
 	extended = true,
-	size = 18,
+	size = 22,
 	weight = 400,
 })
 
 surface.CreateFont("chathud_18_blur", {
 	font = "Roboto",
 	extended = true,
-	size = 18,
+	size = 22,
 	weight = 400,
 	blursize = 2,
 })
