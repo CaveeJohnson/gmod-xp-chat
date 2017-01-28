@@ -7,12 +7,16 @@ chatbox.settings = {
 		["Wake ur mom up"] = {ty = "string", get = function() return "cock" end, set = print}
 	}
 }
+CreateClientConVar("xp_chat_box_font","DermaDefaultBold",true,false,"Changes the Fonts of the chatbox itself.")
+cvars.AddChangeCallback("xp_chat_box_font",function(cv,_,new) chatbox.box_font = new end)
+CreateClientConVar("xp_chat_feed_font","ChatFont",true,false,"Changes the Font of the text displayed inside the chatbox.")
+cvars.AddChangeCallback("xp_chat_feed_font",function(cv,_,new) chatbox.feed_font = new end)
 
 chatbox.accent_color	= Color(255, 192, 203, 255)
 chatbox.back_color		= Color(000, 000, 000, 200)
 chatbox.input_color		= Color(000, 000, 000, 150)
-chatbox.box_font			= CreateClientConVar("xp_chat_box_font","DermaDefaultBold",true,false,"Changes the Fonts of the chatbox itself.")
-chatbox.feed_font			= CreateClientConVar("xp_chat_feed_font","ChatFont",true,false,"Changes the Font of the text displayed inside the chatbox.")
+chatbox.box_font			= GetConVar("xp_chat_box_font"):GetString()
+chatbox.feed_font			= GetConVar("xp_chat_feed_font"):GetString()
 
 local CONFIG_FILE = "xpression_config.lua"
 do
