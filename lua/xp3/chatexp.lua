@@ -161,19 +161,20 @@ else -- CLIENT
 
 	util.AddNetworkString(chatexp.NetTag)
 
-	function chatexp.FuckOff(ply)
-		local m = chatexp.AbuseMode
+	-- function chatexp.FuckOff(ply)
+	-- 	local m = chatexp.AbuseMode
 
-		if m == "EarRape" then
-			ply:SendLua[[local d=vgui.Create'DHTML'd:OpenURL'https://www.youtube.com/watch?v=WevymH75pW8'chat.AddText'dont fuck with chat']]
-		elseif m == "Kick" then
-			ply:Kick("Please refrain from touching *bzzzt*")
-		end
-	end
+	-- 	if m == "EarRape" then
+	-- 		ply:SendLua[[local d=vgui.Create'DHTML'd:OpenURL'https://www.youtube.com/watch?v=WevymH75pW8'chat.AddText'dont fuck with chat']]
+	-- 	elseif m == "Kick" then
+	-- 		ply:Kick("Please refrain from touching *bzzzt*")
+	-- 	end
+	-- end
 
 	function chatexp.SayAs(ply, data, mode, mode_data)
 		if #data > 1024 then
-			chatexp.FuckOff(ply)
+			-- chatexp.FuckOff(ply)
+			Msg"CEXP " print"too much Data!"
 			return
 		end
 
