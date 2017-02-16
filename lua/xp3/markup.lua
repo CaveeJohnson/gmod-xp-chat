@@ -554,42 +554,138 @@ class:register("Expression", Expression)
 
 class:makeFunction("Expression")
 
-local function PPTag(tag)
-	tag = tag:gsub(".", function(a) return "[" .. a:upper() .. a:lower() .. "]" end)
-	return "<" .. tag .. ">(.-)</" .. tag .. ">"
+local IGNORE = function() end
+local function parse(self, str, ply, tags, shouldEscape, stopFunc, addFunc, addTagFunc)
+	local stopFunc = stopFunc or IGNORE
+	local addFunc = addFunc or IGNORE
+	local addTagFunc = addTagFunc or IGNORE
+	local makeTagObjFunc = makeTagObjFunc or IGNORE
+
+	local cur = ""
+	local inTag
+	local activeTags = {}
+	local escaped
+
+	for _, s in pairs(utf_totable(str)) do
+		if s == "<" and not inTag then
+			inTag = true
+			if cur ~= "" then
+				addFunc(self, cur)
+				cur = ""
+			end
+		continue end
+
+		if s == ">" and inTag then
+			inTag = nil
+			cur = cur:lower()
+			if cur:sub(1, 1) == "/" then
+				cur = cur:sub(2)
+
+				if shouldEscape and escaped and cur == "noparse" then
+					escaped = false
+					cur = ""
+					continue
+				elseif not escaped and activeTags[cur] and #activeTags[cur] > 0 then
+					stopFunc(self, activeTags[cur][#activeTags[cur]])
+					table.remove(activeTags[cur], #activeTags[cur])
+					cur = ""
+					continue
+				else
+					addFunc(self, "</" .. cur .. ">")
+					cur = ""
+					continue
+				end
+			else
+				local tag, args = cur:match("(.-)=(.+)")
+				if not tag then
+					tag, args = cur, ""
+				end
+				local tagobject = tags[tag]
+
+				if shouldEscape and not escaped and tag == "noparse" then
+					escaped = true
+					cur = ""
+					continue
+				elseif escaped or not tagobject then
+					addFunc(self, "<" .. cur .. ">")
+					cur = ""
+					continue
+				end
+
+				args = chathud:DoArgs(args, tagobject.args)
+				if isentity(ply) and ply:IsPlayer() and hook.Run("CanPlayerUseTag", ply, tag, args) == false then
+					addFunc(self, "<" .. cur .. ">")
+					cur = ""
+					continue
+				end
+
+				local t = addTagFunc(self, tagobject, args)
+				activeTags[tag] = activeTags[tag] or {}
+				activeTags[tag][#activeTags[tag] + 1] = t or {}
+			end
+
+			cur = ""
+		continue end
+
+		cur = cur .. s
+	end
+
+	if cur ~= "" or inTag then
+		local var = cur
+		if inTag then
+			var = "<" .. var
+		end
+
+		addFunc(self, var)
+	end
+
 end
 
-local preTags = {
-	["anime"] = string.anime,
-	["rep"] = function(text, args)
-		local arg = number(args[1], 1, 10, 1)
-		return text:rep(arg)
-	end,
-}
+local function evalPreTags(data)
+	local str = ""
+	local buffer = ""
+	local shouldEdit = false
 
-function Markup:Parse(str, ply, noPreTags, noShortcuts)
-	local activeTags = {}
-	str = str:gsub(PPTag"noparse", function(a)
-		self:AddString(a)
-		return ""
+	parse(_, data, ply, chathud.PreTags, false,
+	function(_, tag)
+		local content = tag.func(buffer, tag.data)
+		str = str .. content
+
+		shouldEdit = false
+		buffer = ""
+	end,
+	function(_, content)
+		buffer = buffer .. content
+	end,
+	function(_, tagobject, args)
+		if not shouldEdit and #buffer > 0 then
+			str = str .. buffer
+			buffer = ""
+		end
+
+		local newargs = {} -- Pretags don't get to evaluate their arguments more than once
+		for _, arg in pairs(args) do
+			newargs[#newargs + 1] = arg()
+		end
+
+		local t = {}
+		t.data = newargs
+		t.func = tagobject.func
+
+		shouldEdit = true
+
+		return t
 	end)
 
-	if not noPreTags then
-		str = str:gsub("<(.-)>(.-)</(.-)>", function(ts, content, te)
-			ts, te = ts:lower(), te:lower()
-			local tagname, args = ts:match("(.-)=(.+)")
-			if tagname then
-				ts = tagname
-			else
-				args = ""
-			end
-			if ts ~= te then return end
-			local pTag = preTags[ts]
-			if pTag then
-				local content = pTag(content, args:Split(","), ply)
-				if content then self:Parse(content, ply, true) end
-			return "" end
-		end)
+	return str .. buffer
+end
+
+function Markup:Parse(data, ply, noPreTags, noShortcuts)
+	local str = ""
+	if noPreTags then
+		str = data
+	else
+		str = evalPreTags(data)
 	end
 
 	if not noShortcuts then
@@ -601,66 +697,44 @@ function Markup:Parse(str, ply, noPreTags, noShortcuts)
 		end)
 	end
 
-	local cur = ""
-	local inTag
-	local activeTags = {}
+	parse(self, str, ply, chathud.Tags, true,
+	self.AddTagStopper,
+	self.AddString,
+	function(_, tagobject, args)
+		local t = table.Copy(tagobject)
+		t.data = args
 
-	for _, s in pairs(utf_totable(str)) do
-
-		if s == "<" and not inTag then
-			inTag = true
-			if cur ~= "" then
-				self:AddString(cur)
-				cur = ""
-			end
-		continue end
-
-		if s == ">" and inTag then
-			inTag = nil
-			cur = cur:lower()
-			if cur:sub(1, 1) == "/" then
-				cur = cur:sub(2)
-				if activeTags[cur] and #activeTags[cur] > 0 then
-					self:AddTagStopper(activeTags[#activeTags])
-				else
-					self:AddString("</" .. cur .. ">")
-				end
-			else
-				local tag, args = cur:match("(.-)=(.+)")
-				if not tag then
-					tag, args = cur, ""
-				end
-				local tagobject = chathud.Tags[tag]
-				if not tagobject then
-					self:AddString("<" .. cur .. ">")
-					cur = ""
-					continue
-				end
-				args = chathud:DoArgs(args, tagobject.args)
-				if isentity(ply) and ply:IsPlayer() then
-					if hook.Run("CanPlayerUseTag", ply, tag, args) == false then
-						self:AddString("<" .. cur .. ">")
-						cur = ""
-						continue
-					end
-				end
-				tagobject = table.Copy(tagobject)
-				tagobject.data = args
-				local Tag = self:AddTag(tagobject)
-				activeTags[tag] = activeTags[tag] or {}
-				activeTags[tag][#activeTags[tag] + 1] = Tag
-			end
-			cur = ""
-		continue end
-
-		cur = cur .. s
-	end
-
-	if cur ~= "" then
-		self:AddString(cur)
-	end
-
+		return self:AddTag(t)
+	end)
 end
+
+local cache = {}
+function markup_quickParse(data, ply)
+	if cache[data] then
+		return cache[data]
+	end
+
+	local str = ""
+	if noPreTags then
+		str = data
+	else
+		str = evalPreTags(data)
+	end
+
+	local ret = ""
+
+	parse(nil, str, ply, chathud.Tags, true,
+	nil,
+	function(_, content)
+		ret = ret .. content
+	end,
+	nil)
+
+	cache[data] = ret
+
+	return ret
+end
+
 
 class:register("Markup", Markup)
 class:makeFunction("Markup")

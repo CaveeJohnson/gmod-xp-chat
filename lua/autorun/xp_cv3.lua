@@ -49,7 +49,7 @@ end)
 local function do_hook()
 	local gm = GM or GAMEMODE
 	if not gm then return end
-	
+
 	chatexp._oldGamemodeHook = chatexp._oldGamemodeHook or gm.OnPlayerChat
 	function gm:OnPlayerChat(ply, msg, mode, dead, mode_data)
 		chatexp.LastPlayer = ply
@@ -154,7 +154,7 @@ function chat.AddText(...)
 	chat.old_text(...)
 
 	chathud:AddText(...)
-	
+
 	chat.PlaySound()
 end
 

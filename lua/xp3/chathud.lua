@@ -20,22 +20,33 @@ surface.CreateFont("chathud_18_blur", {
 
 chathud = {}
 
---[[ -- Normal fingerprint
-starting tag -> 	255 255 255 255
-starting tag -> 	255 255 0 255
-ending tag -> 	255 255 255 255
-ending tag -> 	255 255 0 255
-]]
+-- What's the difference between a PreTag and a Tag, I hear you ask.
 
---[[ -- Abnormal behaviour fingerprint
-starting tag -> 	255 255 255 255
-starting tag -> 	255 255 0 255
-ending tag -> 	255 255 0 255
-ending tag -> 	255 255 255 255
-]]
+-- A pretag is evaluated BEFORE all normal tags.
+-- Pretags also only get evaluated ONCE due to their nature, making expression
+-- arguments with variable data basicly useless.
 
--- https://my.mixtape.moe/mccdyf.png
--- Tag ending order is not preserved
+-- Rather than providing functionality to the buffer, they change the data IN the buffer.
+
+chathud.PreTags = {
+	["rep"] = {
+		args = {
+			[1] = {type = "number", min = 0, max = 10, default = 1},
+		},
+		func = function(text, args)
+			return text:rep(args[1])
+		end
+	},
+}
+
+if string.anime then
+	chathud.PreTags["anime"] = {
+		args = {
+			-- no args
+		},
+		func = string.anime
+	}
+end
 
 chathud.Tags = {
 	["color"] = {

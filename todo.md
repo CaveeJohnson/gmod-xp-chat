@@ -1,10 +1,17 @@
 ## Unfinished + Bugs
 - [x] [Large images seem to scale wrong, far above where it should be](https://my.mixtape.moe/mejbyh.png)
 ([potentially fixed needs more testing](https://b.catgirlsare.sexy/7x8r.png))
-- [ ] [Color buffer doesnt restore to previous state ~50% of the time](https://b.catgirlsare.sexy/xEMn.png)
+- [x] [Color buffer doesnt restore to previous state ~50% of the time](https://b.catgirlsare.sexy/xEMn.png)
 (Tag ending order is not preserved)
 - [ ] Finish settings tab on chatbox
 - [x] /me duplicates
+- [x] [DM selector doesn't close when chatbox is closed](https://b.catgirlsare.sexy/Mqir.png)
+- [x] The noparse tag is implemented moronicly and just sticks the text at the FRONT of the block
+- [x] The noparse tag is ignored by quick_parse
+- [x] Pretag parsing is AWEFULY implemented and doesn't match nested tags
+- [x] < is removed even if it isnt a tag start/end
+- [ ] Pretags are still wonky when nested
+- [ ] Height calculation is STILL broken
 
 ## Matrixing crap
 - [x] Matrix translation tags move it to the top of the screen
@@ -17,7 +24,7 @@
 - Avatar tag
 - Custom font tag
 - Add ```<code>``` tag (and re-implement lua command syntax parsing as a chat feature not an addon)
-- Add ```<anime>``` tag
+- [Preserve randomness across states](https://b.catgirlsare.sexy/kuQ6.png)
 
 ### Notes
 ```

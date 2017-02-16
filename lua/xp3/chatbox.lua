@@ -1,28 +1,29 @@
 local chatbox = {}
--- bugger
 
 chatbox.settings = {
-	test = {
+	--[[test = {
 		["Wake me up"] = {ty = "Bool", get = function() return false end, set = print},
 		["Wake ur mom up"] = {ty = "string", get = function() return "cock" end, set = print}
-	}
+	}]]
 }
-CreateClientConVar("xp_chat_box_font","DermaDefaultBold",true,false,"Changes the Fonts of the chatbox itself.")
+
+local box_font = CreateClientConVar("xp_chat_box_font","DermaDefaultBold",true,false,"Changes the Fonts of the chatbox itself.")
 cvars.AddChangeCallback("xp_chat_box_font",function(cv,_,new) chatbox.box_font = new end)
-CreateClientConVar("xp_chat_feed_font","ChatFont",true,false,"Changes the Font of the text displayed inside the chatbox.")
+
+local feed_font = CreateClientConVar("xp_chat_feed_font","ChatFont",true,false,"Changes the Font of the text displayed inside the chatbox.")
 cvars.AddChangeCallback("xp_chat_feed_font",function(cv,_,new) chatbox.feed_font = new end)
 
-chatbox.accent_color	= Color(255, 192, 203, 255)
-chatbox.back_color		= Color(000, 000, 000, 200)
-chatbox.input_color		= Color(000, 000, 000, 150)
-chatbox.box_font			= GetConVar("xp_chat_box_font"):GetString()
-chatbox.feed_font			= GetConVar("xp_chat_feed_font"):GetString()
+chatbox.accent_color = Color(255, 192, 203, 255)
+chatbox.back_color   = Color(000, 000, 000, 200)
+chatbox.input_color  = Color(000, 000, 000, 150)
+chatbox.box_font     = box_font:GetString()
+chatbox.feed_font    = feed_font:GetString()
 
-local CONFIG_FILE = "xpression_config.lua"
+local CONFIG_FILE = "xp_chat_config.lua"
 do
 	local config = file.Read(CONFIG_FILE, "DATA")
 
-	if config then
+	if config and luadata then
 		local data = luadata.Decode(config)
 
 		if data then
@@ -34,16 +35,18 @@ do
 end
 
 function chatbox.WriteConfig()
-	local data = {
-		accent_color = chatbox.accent_color,
-		back_color = chatbox.back_color,
-		input_color = chatbox.input_color,
-		box_font = chatbox.box_font,
-		feed_font = chatbox.feed_font,
-	}
+	if luadata then
+		local data = {
+			accent_color = chatbox.accent_color,
+			back_color = chatbox.back_color,
+			input_color = chatbox.input_color,
+			box_font = chatbox.box_font,
+			feed_font = chatbox.feed_font,
+		}
 
-	data = luadata.Encode(data)
-	file.Write(CONFIG_FILE, data)
+		data = luadata.Encode(data)
+		file.Write(CONFIG_FILE, data)
+	end
 
 	local x, y, w, h = chatbox.frame:GetBounds()
 	chatbox.frame:SetCookie("x", x)
@@ -52,71 +55,8 @@ function chatbox.WriteConfig()
 	chatbox.frame:SetCookie("h", h)
 end
 
--- New DM button
--- Settings
-
 function chatbox.IsOpen()
 	return IsValid(chatbox.frame) and chatbox.frame:IsVisible()
-end
-
-local function quick_parse(str)
-	local cur = ""
-	local inTag
-	local activeTags = {}
-	local ret = ""
-
-	for _, s in pairs(utf_totable(str)) do
-		if s == "<" and not inTag then
-			inTag = true
-			if cur ~= "" then
-				ret = ret .. cur
-				cur = ""
-			end
-		continue end
-
-		if s == ">" and inTag then
-			inTag = nil
-			cur = cur:lower()
-			if cur:sub(1, 1) == "/" then
-				cur = cur:sub(2)
-				if activeTags[cur] and #activeTags[cur] > 0 then
-					-- Valid tag, ignore it
-				else
-					ret = ret .. "</" .. cur .. ">"
-				end
-			else
-				local tag, args = cur:match("(.-)=(.+)")
-				if not tag then
-					tag, args = cur, ""
-				end
-				local tagobject = chathud.Tags[tag]
-				if not tagobject then
-					ret = ret .. "<" .. cur .. ">"
-					cur = ""
-					continue
-				end
-				args = chathud:DoArgs(args, tagobject.args)
-				if isentity(ply) and ply:IsPlayer() then
-					if hook.Run("CanPlayerUseTag", ply, tag, args) then
-						ret = ret .. "<" .. cur .. ">"
-						cur = ""
-						continue
-					end
-				end
-				activeTags[tag] = activeTags[tag] or {}
-				activeTags[tag][#activeTags[tag] + 1] = true
-			end
-			cur = ""
-		continue end
-
-		cur = cur .. s
-	end
-
-	if cur ~= "" then
-		ret = ret .. cur
-	end
-
-	return ret
 end
 
 -- Link code is from qchat/EPOE.
@@ -142,12 +82,12 @@ local function AppendTextLink(a, callback)
 
 	if #result == 0 then return false end
 
-	table.sort(result, function(a, b) return a[1] < b[1] end)
+	table.sort(result, function(b, c) return b[1] < c[1] end)
 
 	-- Fix overlaps
 	local _l, _r
 	for k, tbl in ipairs(result) do
-		local l, r = tbl[1], tbl[2]
+		local l = tbl[1]
 
 		if not _l then
 			_l, _r = tbl[1], tbl[2]
@@ -179,6 +119,10 @@ local function AppendTextLink(a, callback)
 	TEX(right)
 
 	return true
+end
+
+local function quick_parse(txt)
+	return markup_quickParse(txt, chatexp.LastPlayer)
 end
 
 function chatbox.ParseInto(feed, ...)
@@ -594,6 +538,7 @@ function chatbox.Build()
 
 				function self.direct_messages.new.DoClick(pan)
 					local menu = DermaMenu(pan)
+					self.dmSelector = menu
 
 					for k, v in next, player.GetAll() do
 						if v ~= LocalPlayer() then
@@ -639,6 +584,10 @@ function chatbox.Close(no_hook)
 	chatbox.WriteConfig()
 	chatbox.GetChatInput():SetText("")
 	chatbox.frame:SetVisible(false)
+
+	if IsValid(chatbox.frame.dmSelector) then
+		chatbox.frame.dmSelector:Remove()
+	end
 
 	if not no_hook then hook.Run("FinishChat") end
 end
