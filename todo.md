@@ -1,8 +1,10 @@
 ## Unfinished + Bugs
-- [ ] [Large images seem to scale wrong, far above where it should be](https://my.mixtape.moe/mejbyh.png)
-	potentially fixed, needs more testing
+- [x] [Large images seem to scale wrong, far above where it should be](https://my.mixtape.moe/mejbyh.png)
+[potentially fixed needs more testing](https://b.catgirlsare.sexy/7x8r.png)
+
 - [ ] [Color buffer doesnt restore to previous state ~50% of the time](https://b.catgirlsare.sexy/xEMn.png)
-	Tag ending order is not preserved
+(Tag ending order is not preserved)
+
 - [ ] Finish settings tab on chatbox
 - [x] /me duplicates
 
