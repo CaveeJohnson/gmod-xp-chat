@@ -1,17 +1,14 @@
 ## Unfinished + Bugs
-- [ ] Large images seem to scale wrong, far above where it should be
-	![screenshot](https://my.mixtape.moe/mejbyh.png)
+- [ ] [Large images seem to scale wrong, far above where it should be](https://my.mixtape.moe/mejbyh.png)
 	potentially fixed, needs more testing
-- [ ] Color buffer doesnt restore to previous state ~50% of the time
+- [ ] [Color buffer doesnt restore to previous state ~50% of the time](https://b.catgirlsare.sexy/xEMn.png)
 	Tag ending order is not preserved
-    ![screenshot](https://b.catgirlsare.sexy/xEMn.png)
 - [ ] Finish settings tab on chatbox
 - [x] /me duplicates
 
 ## Matrixing crap
 - [x] Matrix translation tags move it to the top of the screen
-- [ ] Rotation is relative to start of markup
-    ![screenshot](https://b.catgirlsare.sexy/xxN0.png)
+- [ ] [Rotation is relative to start of markup](https://b.catgirlsare.sexy/xxN0.png)
 
 ## Improvements
 - Multiple matrices
