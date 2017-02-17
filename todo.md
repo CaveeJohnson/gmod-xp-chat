@@ -11,7 +11,7 @@
 - [x] Pretag parsing is AWEFULY implemented and doesn't match nested tags
 - [x] < is removed even if it isnt a tag start/end
 - [ ] Pretags are still wonky when nested
-- [ ] Height calculation is STILL broken (see notes)
+- [x] Height calculation is STILL broken (see notes) (THIS SHOULD NOT BE FIXED, WHAT IN GODS NAME, HOW IS THIS FIXED)
 
 ## Matrixing crap
 - [x] Matrix translation tags move it to the top of the screen
@@ -25,6 +25,7 @@
 - Custom font tag
 - Add ```<code>``` tag (and re-implement lua command syntax parsing as a chat feature not an addon)
 - [Preserve randomness across states](https://b.catgirlsare.sexy/kuQ6.png)
+- Delete everything and try again
 
 ### Notes
 ```
@@ -36,15 +37,4 @@
 [11:16 AM] Q2F2: even though it changes
 [11:16 AM] Q2F2: ill demonstrate
 [11:17 AM] Q2F2: https://my.mixtape.moe/owebwl.mp4
-
-[12:23 AM] Orbitei: there is never more than ONE newline wrapped
-[12:24 AM] Orbitei: across a buffer
-[12:24 AM] Orbitei: because every TEXT BLOCK
-[12:24 AM] Orbitei: holds its own height
-[12:24 AM] Orbitei: then the buffer is calculated like this
-if h > height then
-    height = h
-end
 ```
-
-![screenshot](https://b.catgirlsare.sexy/rxmT.png)

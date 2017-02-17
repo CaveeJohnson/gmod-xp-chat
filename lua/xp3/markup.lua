@@ -399,7 +399,7 @@ function Markup:Draw(nodraw)
 		end
 		chunk:ModifyBuffer(self, buffer, chunk.data)
 
-		local h = (buffer.h or 0)
+		local h = math.max(buffer.y + 22, buffer.h) or 0 -- HACK: https://b.catgirlsare.sexy/BhRE.txt
 		if h > height then
 			height = h
 		end
