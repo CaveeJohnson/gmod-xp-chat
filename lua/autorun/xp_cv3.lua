@@ -43,6 +43,8 @@ if SERVER then
 return end
 
 hook.Add("CanPlayerUseTag", "chathud.restrict", function(ply, tag, args)
+	if not IsValid(ply) then return true end -- chat.addtext, console and such
+
 	if tag:StartWith("dev_") and not ply:IsAdmin() then return false end
 	if convar_limited_tags:GetBool() and tag ~= "color" then return ply:IsAdmin() end
 end)

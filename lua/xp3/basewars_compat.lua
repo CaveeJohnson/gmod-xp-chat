@@ -1,3 +1,7 @@
+local color_red = Color(225, 0, 0, 255)
+local color_greentext = Color(0, 240, 0, 255)
+local color_green = Color(0, 200, 0, 255)
+
 chatexp.Devs = {
 	--Owners
 	["STEAM_0:1:74836666"] = "Trixter",
