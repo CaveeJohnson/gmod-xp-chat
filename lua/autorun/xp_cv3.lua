@@ -36,7 +36,7 @@ hook.Add("ChatShouldHandle", "chatexp.compat", function(handler, msg, mode)
 end)
 
 if SERVER then
-	if BaseWars then AddCSLuaFile"xp3/basewars_compat.lua" end
+	AddCSLuaFile"xp3/basewars_compat.lua"
 	AddCSLuaFile"xp3/markup.lua"
 	AddCSLuaFile"xp3/chathud.lua"
 	AddCSLuaFile"xp3/chatbox.lua"
@@ -79,6 +79,10 @@ end
 local function do_hook()
 	local gm = GM or GAMEMODE
 	if not gm then return end
+
+	if BaseWars and not chatexp.Devs then
+		include"xp3/basewars_compat.lua"
+	end
 
 	chatexp._oldGamemodeHook = chatexp._oldGamemodeHook or gm.OnPlayerChat
 	function gm:OnPlayerChat(ply, msg, mode, dead, mode_data)
@@ -264,8 +268,4 @@ end
 
 function chatbox.GetSize()
 	return chat.GetChatBoxSize()
-end
-
-if BaseWars then
-	include"xp3/basewars_compat.lua"
 end
