@@ -601,6 +601,7 @@ function chatbox.Open(t)
 		chatbox.mode = t
 	end
 
+	chatbox.frame:SetTitle(GetHostName())
 	chatbox.frame:SetVisible(true)
 	chatbox.frame:MakePopup()
 

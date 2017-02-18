@@ -3,21 +3,6 @@ file.CreateDir("emoticon_cache")
 local col = Color(255, 200, 0, 255)
 local Msg = function(...) MsgC(col, ...)  end
 
-surface.CreateFont("chathud_18", {
-	font = "Roboto",
-	extended = true,
-	size = 22,
-	weight = 400,
-})
-
-surface.CreateFont("chathud_18_blur", {
-	font = "Roboto",
-	extended = true,
-	size = 22,
-	weight = 400,
-	blursize = 2,
-})
-
 chathud = {}
 
 -- What's the difference between a PreTag and a Tag, I hear you ask.

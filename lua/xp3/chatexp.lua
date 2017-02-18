@@ -17,7 +17,7 @@ local color_green = Color(0, 200, 0, 255)
 local color_hint = Color(240, 220, 180, 255)
 
 function net.HasOverflowed()
-    return (net.BytesWritten() or 0) >= 65536
+	return (net.BytesWritten() or 0) >= 65536
 end
 
 chatexp.Modes = {
@@ -106,7 +106,6 @@ for k, v in next, chatexp.Modes do
 end
 
 if CLIENT then
-
 	function chatexp.Say(msg, mode, mode_data)
 		local cdata = util.Compress(msg)
 

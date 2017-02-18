@@ -28,7 +28,7 @@ end
 includec"xp3/chatexp.lua"
 
 local convar_custom_handle = CreateConVar("xp_chat_force_source_handle", "0", {FCVAR_REPLICATED, FCVAR_ARCHIVE})
-local convar_limited_tags = CreateConVar("xp_chat_limited_tags", "0", {FCVAR_REPLICATED, FCVAR_ARCHIVE})
+local convar_limited_tags  = CreateConVar("xp_chat_limited_tags",        "0", {FCVAR_REPLICATED, FCVAR_ARCHIVE})
 
 hook.Add("ChatShouldHandle", "chatexp.compat", function(handler, msg, mode)
 	if DarkRP then return false end
@@ -36,6 +36,7 @@ hook.Add("ChatShouldHandle", "chatexp.compat", function(handler, msg, mode)
 end)
 
 if SERVER then
+	if BaseWars then AddCSLuaFile"xp3/basewars_compat.lua" end
 	AddCSLuaFile"xp3/markup.lua"
 	AddCSLuaFile"xp3/chathud.lua"
 	AddCSLuaFile"xp3/chatbox.lua"
@@ -45,6 +46,35 @@ hook.Add("CanPlayerUseTag", "chathud.restrict", function(ply, tag, args)
 	if tag:StartWith("dev_") and not ply:IsAdmin() then return false end
 	if convar_limited_tags:GetBool() and tag ~= "color" then return ply:IsAdmin() end
 end)
+
+local showTs = CreateConVar("xp_chat_timestamp_show",    "0", FCVAR_ARCHIVE, "Show timestamps in chat")
+local hour24 = CreateConVar("xp_chat_timestamp_24h",     "1", FCVAR_ARCHIVE, "Display timestamps in a 24-hour format")
+local tsSec  = CreateConVar("xp_chat_timestamp_seconds", "0", FCVAR_ARCHIVE, "Display timestamps with seconds")
+
+local dgray = Color(150, 150, 150)
+
+local function pad(z)
+	return z >= 10 and tostring(z) or "0" .. z
+end
+
+local zw = "\xE2\x80\x8B"
+local function makeTimeStamp(t, h24, seconds)
+	t[#t + 1] = dgray
+	local d = os.date("*t")
+	if h24 then
+		t[#t + 1] = pad(d.hour) .. ":" .. zw .. pad(d.min) .. zw .. (seconds and ":" .. zw .. pad(d.sec) or "")
+	else
+		local h, pm = d.hour
+		if h > 11 then
+			pm = true
+			h = h > 12 and h - 12 or h
+		elseif h == 0 then
+			h = 12
+		end
+		t[#t + 1] = pad(h) .. ":" .. zw .. pad(d.min) .. zw .. (seconds and ":" .. zw .. pad(d.sec) .. zw or "") .. (pm and " PM" or " AM")
+	end
+	t[#t + 1] = " - "
+end
 
 local function do_hook()
 	local gm = GM or GAMEMODE
@@ -63,6 +93,10 @@ local function do_hook()
 
 		local msgmode = chatexp.Modes[mode]
 		local tbl = {}
+
+		if showTs:GetBool() then
+			makeTimeStamp(tbl, hour24:GetBool(), tsSec:GetBool())
+		end
 
 		local ret
 		if msgmode.Handle then
@@ -85,6 +119,30 @@ if chatbox and IsValid(chatbox.frame) then chatbox.frame:Close() end
 
 include"xp3/markup.lua"
 chathud	= include"xp3/chathud.lua"
+
+local fontSize = CreateClientConVar("xp_chathud_font_size", "22", true, false, "Changes the Fonts of the chathud (not the chatbox).")
+
+local function doFonts()
+	surface.CreateFont("chathud_18", {
+		font = "Roboto",
+		extended = true,
+		size = fontSize:GetInt(),
+		weight = 400,
+	})
+
+	surface.CreateFont("chathud_18_blur", {
+		font = "Roboto",
+		extended = true,
+		size = fontSize:GetInt(),
+		weight = 400,
+		blursize = 2,
+	})
+end
+
+cvars.AddChangeCallback("xp_chathud_font_size", function(cv,_,new)
+	doFonts()
+end, "setFontsChathud")
+doFonts()
 
 do -- chathud
 	hook.Add("HUDPaint", "chathud.draw", function()
@@ -206,4 +264,8 @@ end
 
 function chatbox.GetSize()
 	return chat.GetChatBoxSize()
+end
+
+if BaseWars then
+	include"xp3/basewars_compat.lua"
 end
