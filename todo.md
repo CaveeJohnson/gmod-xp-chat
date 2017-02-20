@@ -20,8 +20,7 @@
 - [ ] [Rotation is relative to start of markup](https://b.catgirlsare.sexy/xxN0.png)
 
 ## Improvements
-- Multiple matrices
-- Add link parsing back to chatbox
+- Multiple matrices per chunk
 - Save last 5 lines of text and upon re-opening (eg rejoin) print them in grey
 - Avatar tag
 - Add ```<code>``` tag (and re-implement lua command syntax parsing as a chat feature not an addon)
