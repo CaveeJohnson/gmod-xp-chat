@@ -24,7 +24,6 @@
 - Add link parsing back to chatbox
 - Save last 5 lines of text and upon re-opening (eg rejoin) print them in grey
 - Avatar tag
-- Custom font tag
 - Add ```<code>``` tag (and re-implement lua command syntax parsing as a chat feature not an addon)
 - [Preserve randomness across states](https://b.catgirlsare.sexy/kuQ6.png) (math.randomseed?)
 - Delete everything and try again
