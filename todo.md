@@ -12,7 +12,7 @@
 - [x] < is removed even if it isnt a tag start/end
 - [ ] Pretags are still wonky when nested
 - [x] Height calculation is STILL broken (see notes) (THIS SHOULD NOT BE FIXED, WHAT IN GODS NAME, HOW IS THIS FIXED)
-- [ ] If < is reached while still in a tag then discard it and start a tag again rather than blowing up https://b.catgirlsare.sexy/NqRG.png
+- [ ] [If < is reached while still in a tag then discard it and start a tag again rather than blowing up](https://b.catgirlsare.sexy/NqRG.png)
 - [ ] Reset history position to 1/0 on chatbox close
 
 ## Matrixing crap
