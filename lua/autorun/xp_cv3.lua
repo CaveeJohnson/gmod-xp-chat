@@ -116,6 +116,24 @@ local function do_hook()
 		chat.AddText(unpack(tbl))
 		return true
 	end
+
+	local green = Color(120, 219, 87)
+	chatexp._oldGamemodeHook2 = chatexp._oldGamemodeHook2 or gm.ChatText
+	function gm:ChatText(idx, name, text, type)
+		if not IsValid(chatbox.frame) then chatbox.Build() end
+
+		if type == "chat" then
+			chatbox.ParseInto(chatbox.GetChatFeed(), green, name, color_white, ": " .. text)
+			chathud:AddText(green, name, color_white, ": " .. text)
+		return end
+
+		if type == "darkrp" then return end -- Compat for some weird stuff with darkrp
+
+		chatbox.ParseInto(chatbox.GetChatFeed(), green, text)
+		chathud:AddText(green, text)
+
+		return false
+	end
 end
 
 do_hook()
@@ -221,22 +239,6 @@ function chat.AddText(...)
 
 	chat.PlaySound()
 end
-
-local green = Color(120, 219, 87)
-
-hook.Add("ChatText", "xp.receive", function(idx, name, text, type)
-	if not IsValid(chatbox.frame) then chatbox.Build() end
-
-	if type == "chat" then
-		chatbox.ParseInto(chatbox.GetChatFeed(), green, name, color_white, ": " .. text)
-		chathud:AddText(green, name, color_white, ": " .. text)
-	return end
-
-	if type == "darkrp" then return end -- Compat for some weird stuff with darkrp
-
-	chatbox.ParseInto(chatbox.GetChatFeed(), green, text)
-	chathud:AddText(green, text)
-end)
 
 -- Start compatability for addons
 
