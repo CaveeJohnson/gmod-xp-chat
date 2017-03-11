@@ -197,8 +197,7 @@ function Text:Draw(markup, buffer, data)
 		end
 		surface.SetFontFallback(font)
 		if bgcolor.a > 0 then
-			surface.SetDrawColor(bgcolor)
-			surface.DrawRect(cx, cy, cw, ch)
+			draw.RoundedBox(4, cx, cy, cw, ch, bgcolor)
 		end
 		surface.SetTextColor(color)
 		surface.SetTextPos(cx, cy)
@@ -241,7 +240,7 @@ end
 function Image:Draw(markup, buffer, data)
 	local image, size = _f(data.image), self.size
 	if not image then return end
-	if isstring(image) then image = MaterialCache(image, "noclamp smooth") end
+	if isstring(image) then image = MaterialCache(image, "noclamp smooth mips") end
 	surface.SetDrawColor(buffer.fgColor)
 	surface.SetMaterial(image)
 	surface.DrawTexturedRect(buffer.x, buffer.y, size, size)
