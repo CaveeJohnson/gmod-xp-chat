@@ -14,6 +14,7 @@
 - [x] Height calculation is STILL broken (see notes) (THIS SHOULD NOT BE FIXED, WHAT IN GODS NAME, HOW IS THIS FIXED)
 - [ ] [If < is reached while still in a tag then discard it and start a tag again rather than blowing up](https://b.catgirlsare.sexy/NqRG.png)
 - [ ] Reset history position to 1/0 on chatbox close
+- [ ] DMs are broken on dorkrp
 
 ## Matrixing crap
 - [x] Matrix translation tags move it to the top of the screen
