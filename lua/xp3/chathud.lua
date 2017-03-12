@@ -178,32 +178,36 @@ for _, icon in pairs(file.Find("materials/icon16/*.png", "GAME")) do
 	chathud.Shortcuts[string.StripExtension(icon)] = "<texture=icon16/" .. icon .. ">"
 end
 
+local blacklist = {
+	["0"] = true,
+	["1"] = true,
+}
 function chathud.CreateSteamShortcuts(update)
-    local tag = os.date("%Y%m%d")
-    local latest = "steam_emotes_"..tag..".dat"
+	local tag = os.date("%Y%m%d")
+	local latest = "steam_emotes_" .. tag .. ".dat"
 
-    local found = file.Find("emoticon_cache/steam_emotes_*.dat", "DATA")
-    for k, v in next,found do
-        if v ~= latest then file.Delete("emoticon_cache/" .. v) end
-    end
+	local found = file.Find("emoticon_cache/steam_emotes_*.dat", "DATA")
+	for k, v in next,found do
+		if v ~= latest then file.Delete("emoticon_cache/" .. v) end
+	end
 
-    latest = "emoticon_cache/" .. latest
+	latest = "emoticon_cache/" .. latest
 
-    if file.Exists(latest, "DATA") and not update then
-        local data = file.Read(latest, "DATA")
+	if file.Exists(latest, "DATA") and not update then
+		local data = file.Read(latest, "DATA")
 
-        for name in data:gmatch('"name": ":(.-):"') do
-            if not chathud.Shortcuts[name] then chathud.Shortcuts[name] = "<se=" .. name .. ">" end
-        end
-    else
-        http.Fetch("http://cdn.steam.tools/data/emote.json", function(b)
-            for name in b:gmatch('"name": ":(.-):"') do
-                if not chathud.Shortcuts[name] then chathud.Shortcuts[name] = "<se=" .. name .. ">" end
-            end
+		for name in data:gmatch([["name": ":(.-):"]]) do
+			if not chathud.Shortcuts[name] and not blacklist[name] then chathud.Shortcuts[name] = "<se=" .. name .. ">" end
+		end
+	else
+		http.Fetch("http://cdn.steam.tools/data/emote.json", function(b)
+			for name in b:gmatch([["name": ":(.-):"]]) do
+				if not chathud.Shortcuts[name] and not blacklist[name] then chathud.Shortcuts[name] = "<se=" .. name .. ">" end
+			end
 
-            file.Write(latest, b)
-        end)
-    end
+			file.Write(latest, b)
+		end)
+	end
 end
 
 chathud.CreateSteamShortcuts()
@@ -225,6 +229,7 @@ function chathud:CleanupOldMarkups()
 	end
 end
 
+local consoleColor = Color(106, 90, 205, 255)
 function chathud:AddText(...)
 	local markup = self:AddMarkup()
 	markup:StartLife(10)
@@ -236,9 +241,19 @@ function chathud:AddText(...)
 			markup:Parse(var, chatexp.LastPlayer)
 		elseif istable(var) and var.r and var.g and var.b and var.a then
 			markup:AddFGColor(var)
-		elseif isentity(var) and var:IsPlayer() then
-			markup:AddFGColor(team.GetColor(var:Team()))
-			markup:Parse(var:Nick())
+		elseif isentity(var) then
+			if var:IsPlayer() then
+				markup:AddFGColor(team.GetColor(var:Team()))
+				markup:Parse(var:Nick())
+			else
+				local name = (var.Name and isfunction(var.name) and var:Name()) or var.Name or var.PrintName or tostring(var)
+				if var:EntIndex() == 0 then
+					markup:AddFGColor(consoleColor)
+					name = "Console"
+				end
+
+				markup:AddString(name)
+			end
 		else
 			markup:AddString(tostring(var))
 		end
@@ -283,7 +298,7 @@ function chathud:Draw()
 		local alpha = markup.alpha
 		if alpha > 0 then
 			surface.SetAlphaMultiplier(alpha / 255)
-			matrix:SetTranslation(Vector((pace and pace.IsActive() and pace.Editor:GetAlpha() ~= 0 and chathud.x + pace.Editor:GetWide() or chathud.x), markup.y or 0, 0))
+			matrix:SetTranslation(Vector(pace and pace.IsActive() and pace.Editor:GetAlpha() ~= 0 and chathud.x + pace.Editor:GetWide() or chathud.x, markup.y or 0, 0))
 			cam.PushModelMatrix(matrix)
 			local ok, why = pcall(markup.Draw, markup)
 			if not ok then
@@ -312,18 +327,18 @@ end
 
 local b = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 local function dec(data)
-    data = string.gsub(data, "[^" .. b.. "=]", "")
-    return (data:gsub(".", function(x)
-        if x == "=" then return "" end
-        local r, f = "", (b:find(x) - 1)
-        for i = 6, 1, -1 do r = r .. (f % 2 ^ i - f % 2 ^ (i - 1) > 0 and "1" or "0") end
-        return r
-    end):gsub("%d%d%d?%d?%d?%d?%d?%d?", function(x)
-        if #x ~= 8 then return "" end
-        local c = 0
-        for i = 1,8 do c = c + (x:sub(i,i) == "1" and 2 ^ (8 - i) or 0) end
-        return string.char(c)
-    end))
+	data = string.gsub(data, "[^" .. b .. "=]", "")
+	return data:gsub(".", function(x)
+		if x == "=" then return "" end
+		local r, f = "", b:find(x) - 1
+		for i = 6, 1, -1 do r = r .. (f % 2 ^ i - f % 2 ^ (i - 1) > 0 and "1" or "0") end
+		return r
+	end):gsub("%d%d%d?%d?%d?%d?%d?%d?", function(x)
+		if #x ~= 8 then return "" end
+		local c = 0
+		for i = 1,8 do c = c + (x:sub(i,i) == "1" and 2 ^ (8 - i) or 0) end
+		return string.char(c)
+	end)
 end
 
 file.CreateDir("emoticon_cache")
@@ -387,7 +402,7 @@ chathud.Tags["se"] = {
 		surface.DrawTexturedRect(buffer.x, buffer.y, size, size)
 	end,
 	ModifyBuffer = function(self, markup, buffer, args)
-		local image, size = args[1], args[2]
+		local size = args[2]
 		buffer.h, buffer.x = size, buffer.x + size
 		if buffer.x > markup.w then
 			buffer.x = 0
@@ -413,7 +428,7 @@ chathud.Tags["texture"] = {
 		surface.DrawTexturedRect(buffer.x, buffer.y + yoff, size, size)
 	end,
 	ModifyBuffer = function(self, markup, buffer, args)
-		local image, size = args[1], args[2]
+		local size = args[2]
 		buffer.h, buffer.x = size, buffer.x + size
 		if buffer.x > markup.w then
 			buffer.x = 0
@@ -457,7 +472,7 @@ function chathud:DoArgs(str, argfilter)
 			end
 		end
 		t[i] = function()
-			local a,b = _f(value)
+			local a, b = _f(value)
 			if a == false and isstring(b) then
 				Msg"ChatHUD " print("Expression error: " .. b)
 				return f.type == "number" and number(nil, f.min, f.max, f.default) or (f.default or "")

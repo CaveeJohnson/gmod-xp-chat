@@ -147,7 +147,12 @@ function chatbox.ParseInto(feed, ...)
 
 				feed:AppendText(quick_parse(v:Nick()))
 			else
-				local name = (v.Nick and v:Nick()) or v.PrintName or tostring(v)
+				local name = (v.Name and isfunction(v.name) and v:Name()) or v.Name or v.PrintName or tostring(v)
+				if v:EntIndex() == 0 then
+					feed:InsertColorChange(106, 90, 205, 255)
+					name = "Console"
+				end
+
 				feed:AppendText(quick_parse(name))
 			end
 		elseif v ~= nil then
