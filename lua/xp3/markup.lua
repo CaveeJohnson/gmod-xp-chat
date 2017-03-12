@@ -197,7 +197,8 @@ function Text:Draw(markup, buffer, data)
 		end
 		surface.SetFontFallback(font)
 		if bgcolor.a > 0 then
-			draw.RoundedBox(4, cx, cy, cw, ch, bgcolor)
+			surface.SetDrawColor(bgcolor)
+			surface.DrawRect(cx, cy, cw, ch)
 		end
 		surface.SetTextColor(color)
 		surface.SetTextPos(cx, cy)
