@@ -52,6 +52,7 @@ end)
 local showTs = CreateConVar("xp_chat_timestamp_show",    "0", FCVAR_ARCHIVE, "Show timestamps in chat")
 local hour24 = CreateConVar("xp_chat_timestamp_24h",     "1", FCVAR_ARCHIVE, "Display timestamps in a 24-hour format")
 local tsSec  = CreateConVar("xp_chat_timestamp_seconds", "0", FCVAR_ARCHIVE, "Display timestamps with seconds")
+local tickSn = CreateConVar("xp_chat_message_tick",      "1", FCVAR_ARCHIVE, "Enable tick sound when a message is received")
 
 local dgray = Color(150, 150, 150)
 
@@ -237,7 +238,9 @@ function chat.AddText(...)
 
 	chathud:AddText(...)
 
-	chat.PlaySound()
+	if tickSn:GetBool() then
+		chat.PlaySound()
+	end
 end
 
 -- Start compatability for addons
