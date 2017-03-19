@@ -3,7 +3,7 @@ file.CreateDir("emoticon_cache")
 local col = Color(255, 200, 0, 255)
 local Msg = function(...) MsgC(col, ...)  end
 
-chathud = {}
+chathud = chathud or {}
 
 -- What's the difference between a PreTag and a Tag, I hear you ask.
 
@@ -209,8 +209,42 @@ function chathud.CreateSteamShortcuts(update)
 		end)
 	end
 end
-
 chathud.CreateSteamShortcuts()
+
+function chathud.CreateTwitchShortcuts(update)
+	local tag = os.date("%Y%m%d")
+	local latest = "twitch_global_emotes_" .. tag .. ".dat"
+
+	local found = file.Find("emoticon_cache/twitch_global_emotes_*.dat", "DATA")
+	for k, v in next,found do
+		if v ~= latest then file.Delete("emoticon_cache/" .. v) end
+	end
+
+	latest = "emoticon_cache/" .. latest
+
+	if file.Exists(latest, "DATA") and not update then
+		local data = file.Read(latest, "DATA")
+
+		local d = util.JSONToTable(data)
+		if not d then return ErrorNoHalt("ChatHUD: Failed to read existing Twitch Emote cache.\n") end
+
+		for name, v in pairs(d.emotes) do
+			if not chathud.Shortcuts[name] and not blacklist[name] then chathud.Shortcuts[name] = "<te=" .. v.image_id .. ">" end
+		end
+	else
+		http.Fetch("https://twitchemotes.com/api_cache/v2/global.json", function(b)
+			local d = util.JSONToTable(b)
+			if not d then return ErrorNoHalt("ChatHUD: Failed to updated Twitch Emote cache.\n") end
+
+			for name, v in pairs(d.emotes) do
+				if not chathud.Shortcuts[name] and not blacklist[name] then chathud.Shortcuts[name] = "<te=" .. v.image_id .. ">" end
+			end
+
+			file.Write(latest, b)
+		end)
+	end
+end
+chathud.CreateTwitchShortcuts()
 
 function chathud:AddMarkup()
 	local markup = class:new("Markup")
@@ -325,23 +359,27 @@ local function MakeCache(filename, emoticon)
 	emoticon_cache[emoticon or string.StripExtension(string.GetFileFromFilename(filename))] = mat
 end
 
-local b = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
-local function dec(data)
-	data = string.gsub(data, "[^" .. b .. "=]", "")
-	return data:gsub(".", function(x)
-		if x == "=" then return "" end
-		local r, f = "", b:find(x) - 1
-		for i = 6, 1, -1 do r = r .. (f % 2 ^ i - f % 2 ^ (i - 1) > 0 and "1" or "0") end
-		return r
-	end):gsub("%d%d%d?%d?%d?%d?%d?%d?", function(x)
-		if #x ~= 8 then return "" end
-		local c = 0
-		for i = 1,8 do c = c + (x:sub(i,i) == "1" and 2 ^ (8 - i) or 0) end
-		return string.char(c)
-	end)
+local dec
+do
+	local b = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+	function dec(data)
+		data = string.gsub(data, "[^" .. b .. "=]", "")
+		return data:gsub(".", function(x)
+			if x == "=" then return "" end
+			local r, f = "", b:find(x) - 1
+			for i = 6, 1, -1 do r = r .. (f % 2 ^ i - f % 2 ^ (i - 1) > 0 and "1" or "0") end
+			return r
+		end):gsub("%d%d%d?%d?%d?%d?%d?%d?", function(x)
+			if #x ~= 8 then return "" end
+			local c = 0
+			for i = 1,8 do c = c + (x:sub(i,i) == "1" and 2 ^ (8 - i) or 0) end
+			return string.char(c)
+		end)
+	end
 end
 
 file.CreateDir("emoticon_cache")
+file.CreateDir("emoticon_cache/twitch")
 function chathud:GetSteamEmoticon(emoticon)
 	emoticon = emoticon:gsub(":",""):Trim()
 	if emoticon_cache[emoticon] then
@@ -375,6 +413,32 @@ function chathud:GetSteamEmoticon(emoticon)
 	busy[emoticon] = true
 	return false
 end
+function chathud:GetTwitchEmoticon(emoticon)
+	if emoticon_cache[emoticon] then
+		return emoticon_cache[emoticon]
+	end
+	if busy[emoticon] then
+		return false
+	end
+	if file.Exists("emoticon_cache/twitch/" .. emoticon .. ".png", "DATA") then
+		MakeCache("emoticon_cache/twitch/" .. emoticon .. ".png", emoticon)
+	return emoticon_cache[emoticon] or false end
+	Msg"ChatHUD " print("Downloading emoticon " .. emoticon)
+	http.Fetch("https://static-cdn.jtvnw.net/emoticons/v1/" .. emoticon .. "/3.0", function(body, len, headers, code)
+		if code == 200 then
+			if body == "" then
+				Msg"ChatHUD " print("Server returned OK but empty response")
+			return end
+			Msg"ChatHUD " print("Download OK")
+			file.Write("emoticon_cache/twitch/" .. emoticon .. ".png", body)
+			MakeCache("emoticon_cache/twitch/" .. emoticon .. ".png", emoticon)
+		else
+			Msg"ChatHUD " print("Download failure. Code: " .. code)
+		end
+	end)
+	busy[emoticon] = true
+	return false
+end
 
 -------------------------
 
@@ -396,6 +460,30 @@ chathud.Tags["se"] = {
 	Draw = function(self, markup, buffer, args)
 		local image, size = args[1], args[2]
 		image = chathud:GetSteamEmoticon(image)
+		if image == false then image = MaterialCache("error") end
+		surface.SetDrawColor(buffer.fgColor)
+		surface.SetMaterial(image)
+		surface.DrawTexturedRect(buffer.x, buffer.y, size, size)
+	end,
+	ModifyBuffer = function(self, markup, buffer, args)
+		local size = args[2]
+		buffer.h, buffer.x = size, buffer.x + size
+		if buffer.x > markup.w then
+			buffer.x = 0
+			buffer.y = buffer.y + size
+			buffer.h = buffer.y + size
+		end
+	end,
+}
+
+chathud.Tags["te"] = {
+	args = {
+		[1] = {type = "string", default = "error"},
+		[2] = {type = "number", min = 8, max = 128, default = 18},
+	},
+	Draw = function(self, markup, buffer, args)
+		local image, size = args[1], args[2]
+		image = chathud:GetTwitchEmoticon(image)
 		if image == false then image = MaterialCache("error") end
 		surface.SetDrawColor(buffer.fgColor)
 		surface.SetMaterial(image)
