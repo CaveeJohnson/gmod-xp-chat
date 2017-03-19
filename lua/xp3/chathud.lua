@@ -4,6 +4,7 @@ local col = Color(255, 200, 0, 255)
 local Msg = function(...) MsgC(col, ...)  end
 
 chathud = chathud or {}
+chathud.oldShadow = chathud.oldShadow or false
 
 -- What's the difference between a PreTag and a Tag, I hear you ask.
 
@@ -268,7 +269,7 @@ function chathud:AddText(...)
 	local markup = self:AddMarkup()
 	markup:StartLife(10)
 	markup:AddFont("chathud_18")
-	markup:AddShadow(4)
+	markup:AddShadow(chathud.oldShadow and 2 or 4)
 	for i = 1, select("#", ...) do
 		local var = select(i, ...)
 		if isstring(var) then

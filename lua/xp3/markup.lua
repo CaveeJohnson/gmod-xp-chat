@@ -189,8 +189,13 @@ function Text:Draw(markup, buffer, data)
 			end
 			for i = 1, size do
 				for x = 1, 2 do
-					surface.SetTextColor(0, 0, 0, 255)
-					surface.SetTextPos(cx, cy + (x - 1))
+					if chathud.oldShadow then
+						surface.SetTextColor(0, 0, 0, 150 / x)
+						surface.SetTextPos(cx + i, cy + i)
+					else
+						surface.SetTextColor(0, 0, 0, 255)
+						surface.SetTextPos(cx, cy + (x - 1))
+					end
 					surface.DrawText(char)
 				end
 			end

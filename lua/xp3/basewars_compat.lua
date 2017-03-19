@@ -122,3 +122,7 @@ chatexp.Modes[CHATMODE_TEAM].Handle = function(tbl, ply, msg, dead, mode_data)
 
 	tbl[#tbl + 1] = msg
 end
+
+if chathud then
+	chathud.oldShadow = true
+end
