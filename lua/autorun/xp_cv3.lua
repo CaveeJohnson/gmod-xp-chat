@@ -1,3 +1,6 @@
+local disable = CreateConVar("xp_chat_disable", "0", {FCVAR_REPLICATED, FCVAR_ARCHIVE})
+if disable:GetBool() then return end
+
 local function includec(...) AddCSLuaFile(...) return include(...) end
 class	= includec"xp3/class.lua"
 luadata	= includec"xp3/luadata.lua"
