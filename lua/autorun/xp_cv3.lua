@@ -142,6 +142,7 @@ end
 
 do_hook()
 hook.Add("InitPostEntity", "xp.do_hook", do_hook)
+hook.Add("OnReloaded", "xp.do_hook", do_hook)
 
 if chatbox and IsValid(chatbox.frame) then chatbox.frame:Close() end
 
