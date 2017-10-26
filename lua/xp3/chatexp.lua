@@ -160,6 +160,8 @@ else -- CLIENT
 
 	util.AddNetworkString(chatexp.NetTag)
 
+	local print = _print or print
+
 	function chatexp.SayAs(ply, data, mode, mode_data)
 		if #data > 1024 then
 			Msg"CEXP " print"Too much data!"
@@ -207,6 +209,8 @@ else -- CLIENT
 				return
 			end
 		net.Send(filter)
+
+		print(ply:Nick() .. ": " .. data)
 	end
 
 	net.Receive(chatexp.NetTag, function(_, ply)
