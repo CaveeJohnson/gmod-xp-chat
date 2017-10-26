@@ -63,7 +63,7 @@ do
 				tbl[#tbl + 1] = gray
 				tbl[#tbl + 1] = "["
 				tbl[#tbl + 1] = blu
-				tbl[#tbl + 1] = NiceFormat(ugroup)
+				tbl[#tbl + 1] = ply.GetUserGroupName and ply:GetUserGroupName() or NiceFormat(ugroup)
 				tbl[#tbl + 1] = gray
 				tbl[#tbl + 1] = "] "
 			end
