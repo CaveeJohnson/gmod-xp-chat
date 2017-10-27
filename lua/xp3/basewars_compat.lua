@@ -86,7 +86,10 @@ chatexp.Modes[CHATMODE_DEFAULT].Handle = function(tbl, ply, msg, dead, mode_data
 		tbl[#tbl + 1] = "*DEAD* "
 	end
 
-	tagParse(tbl, ply)
+	if hook.Run("BW_ShouldTagParse", tbl, ply, false) ~= false then
+		tagParse(tbl, ply)
+	end
+	hook.Run("BW_PostTagParse", tbl, ply, false)
 
 	tbl[#tbl + 1] = ply -- ChatHUD parses this automaticly
 	tbl[#tbl + 1] = color_white
@@ -108,8 +111,11 @@ chatexp.Modes[CHATMODE_TEAM].Handle = function(tbl, ply, msg, dead, mode_data)
 
 	tbl[#tbl + 1] = color_green
 	tbl[#tbl + 1] = "(TEAM) "
-
-	tagParse(tbl, ply)
+	
+	if hook.Run("BW_ShouldTagParse", tbl, ply, true) ~= false then
+		tagParse(tbl, ply)
+	end
+	hook.Run("BW_PostTagParse", tbl, ply, true)
 
 	tbl[#tbl + 1] = ply -- ChatHUD parses this automaticly
 	tbl[#tbl + 1] = color_white
