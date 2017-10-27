@@ -32,12 +32,8 @@ do
 		ErrorNoHalt"LUADATA SECURITY WARNING: Unable to load verifier, update me!\n"
 		opcode_checker = function() return function() return true end end
 	else
-
-
 		local jutil = jit.util or require'jit.util'
 		local band =  bit.band
-
-
 
 		local opcodes = {}
 
@@ -61,7 +57,7 @@ do
 
 		local function getop(func, pc)
 			local ins = jutil.funcbc(func, pc)
-			return ins and (band(ins, 0xff)+1)
+			return ins and (band(ins, 0xff) + 1)
 		end
 
 
@@ -148,7 +144,7 @@ RET1
 UNM]]
 
 local is_func_ok = opcode_checker(whitelist)
-local luadata = {} local s = luadata -- self
+local luadata = _G.luadata or {} local s = luadata -- self
 
 luadata.EscapeSequences = {
 	[("\a"):byte()] = [[\a]],
@@ -261,37 +257,37 @@ function luadata.Encode(tbl, __brackets)
 end
 
 local env = {
-	Vector=Vector,
-	Angle=Angle,
-	Color=Color,
+	Vector = Vector,
+	Angle  = Angle,
+	Color  = Color,
 	--Entity=Entity,
 }
 
 -- TODO: Bytecode analysis for bad loop and string functions?
-function luadata.Decode(str,nojail)
-	local func = CompileString(string.format("return { %s }",str), "luadata_decode", false)
+function luadata.Decode(str, nojail)
+	local func = CompileString(string.format("return {\n%s\n}", str), "luadata_decode", false)
 
 	if type(func) == "string" then
 		ErrorNoHalt("Luadata decode syntax: "..tostring(func):gsub("^luadata_decode","")..'\n')
 
-		return {},func
+		return {}, func
 	end
 
 	if not nojail then
-		setfenv(func,env)
+		setfenv(func, env)
 	elseif istable(nojail) then
-		setfenv(func,nojail)
+		setfenv(func, nojail)
 	elseif isfunction(nojail) then
-		nojail( func )
+		nojail(func)
 	end
 
 
-	local ok,err = is_func_ok( func )
+	local ok, err = is_func_ok(func)
 	if not ok or err then
 		err = err or "invalid opcodes detected"
 		ErrorNoHalt("Luadata opcode: "..tostring(err):gsub("^luadata_decode","")..'\n')
 
-		return {},err
+		return {}, err
 	end
 
 	local ok, err = pcall(func)
@@ -299,11 +295,11 @@ function luadata.Decode(str,nojail)
 	if not ok then
 		ErrorNoHalt("Luadata decode: "..tostring(err):gsub("^luadata_decode","")..'\n')
 
-		return {},err
+		return {}, err
 	end
 
 	if isfunction(nojail) then
-		nojail( func, err )
+		nojail(func, err)
 	end
 
 	return err
@@ -316,6 +312,91 @@ do -- file extension
 
 	function luadata.ReadFile(path)
 		return luadata.Decode(file.Read(path) or "")
+	end
+
+	function luadata.SetKeyValueInFile(path, key, value)
+		local tbl = luadata.ReadFile(path)
+		tbl[key] = value
+		luadata.WriteFile(path, tbl)
+	end
+
+	function luadata.GetKeyFromFile(path, key, def)
+		return luadata.ReadFile(path)[key] or def
+	end
+
+	function luadata.AppendToFile(path, value)
+		local tbl = luadata.ReadFile(path)
+		table.insert(tbl, value)
+		luadata.WriteFile(path, tbl)
+	end
+end
+
+do -- option extension
+	function luadata.AccessorFunc(tbl, func_name, var_name, nw, def)
+		tbl["Set" .. func_name] = function(self, val)
+			self[nw and "SetLuaDataNWOption" or "SetLuaDataOption"](self, var_name, val or def)
+		end
+
+		tbl["Get" .. func_name] = function(self, val)
+			return self[nw and "GetLuaDataNWOption" or "GetLuaDataOption"](self, var_name, def)
+		end
+	end
+
+	local meta = FindMetaTable("Player")
+
+	function meta:LoadLuaDataOptions()
+		self.LuaDataOptions = luadata.ReadFile("luadata_options/" .. self:UniqueID() .. ".txt")
+
+		for key, value in pairs(self.LuaDataOptions) do
+			if key:sub(0, 3) == "_nw" then
+				self:SetNWString("ld_" .. key:sub(4), glon.encode(value))
+			end
+		end
+	end
+
+	if SERVER then
+		hook.Add("OnEntityCreated", "luadata_player_spawn", function(ply)
+			if ply:IsValid() and FindMetaTable("Player") == getmetatable(ply) then
+				ply:LoadLuaDataOptions()
+			end
+		end)
+	end
+
+	function meta:SaveLuaDataOptions()
+		file.CreateDir("luadata_options")
+		luadata.WriteFile("luadata_options/" .. self:UniqueID() .. ".txt", self.LuaDataOptions)
+	end
+
+	function meta:SetLuaDataOption(key, value)
+		if not self.LuaDataOptions then self:LoadLuaDataOptions() end
+		self.LuaDataOptions[key] = value
+		self:SaveLuaDataOptions()
+	end
+
+	function meta:GetLuaDataOption(key, def)
+		if not self.LuaDataOptions then self:LoadLuaDataOptions() end
+		return self.LuaDataOptions[key] or def
+	end
+
+	function meta:SetLuaDataNWOption(key, value)
+		self:SetLuaDataOption("_nw"..key, value)
+		self:SetNWString("ld_" .. key, glon.encode(value))
+	end
+
+	function meta:GetLuaDataNWOption(key, def)
+		local value
+
+		if SERVER then
+			value = self:GetLuaDataOption("_nw"..key)
+
+			if value then
+				return value
+			end
+		end
+
+		value = self:GetNWString("ld_" .. key, false)
+
+		return type(value) == "string" and glon.decode(value) or def
 	end
 end
 
