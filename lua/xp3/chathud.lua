@@ -233,12 +233,12 @@ function chathud.CreateTwitchShortcuts(update)
 			if not chathud.Shortcuts[name] and not blacklist[name] then chathud.Shortcuts[name] = "<te=" .. v.image_id .. ">" end
 		end
 	else
-		http.Fetch("https://twitchemotes.com/api_cache/v2/global.json", function(b)
+		http.Fetch("https://twitchemotes.com/api_cache/v3/global.json", function(b)
 			local d = util.JSONToTable(b)
 			if not d then return ErrorNoHalt("ChatHUD: Failed to updated Twitch Emote cache.\n") end
 
 			for name, v in pairs(d.emotes) do
-				if not chathud.Shortcuts[name] and not blacklist[name] then chathud.Shortcuts[name] = "<te=" .. v.image_id .. ">" end
+				if not chathud.Shortcuts[name] and not blacklist[name] then chathud.Shortcuts[name] = "<te=" .. v.id .. ">" end
 			end
 
 			file.Write(latest, b)
