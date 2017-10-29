@@ -12,6 +12,7 @@ chatexp.Devs = {
 	["STEAM_0:0:80669850"] = "user4992",
 	["STEAM_0:0:42138604"] = "Liquid",
 	["STEAM_0:0:62588856"] = "Ghosty",
+	["STEAM_0:1:29543208"] = "Zeni",
 }
 
 local tagParse
