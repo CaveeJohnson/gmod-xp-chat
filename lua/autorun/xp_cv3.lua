@@ -219,7 +219,8 @@ do -- chatbox
 		chatbox.ParseInto(chatbox.GetDMFeed(ply), ply, color_white, ": ", text)
 	end)
 
-	hook.Add("PlayerBindPress", "chatbox.bind", function(ply, bind)
+	hook.Add("PlayerBindPress", "chatbox.bind", function(ply, bind, down)
+		if not down then return end
 		if not IsValid(chatbox.frame) then chatbox.Build() end
 
 		local team_chat = false
