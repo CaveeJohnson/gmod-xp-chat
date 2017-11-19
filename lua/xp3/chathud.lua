@@ -142,7 +142,11 @@ chathud.Tags = {
 		end,
 		Draw = function(self, markup, buffer, args)
 			self.mtrx:SetTranslation(Vector(chathud.x, markup.y))
-			self.mtrx:SetAngles(Angle(0, args[1], 0))
+
+			self.mtrx:Translate(Vector(buffer.x, buffer.y + (buffer.h * 0.5)))
+				self.mtrx:Rotate(Angle(0, args[1], 0))
+			self.mtrx:Translate(-Vector(buffer.x, buffer.y + (buffer.h * 0.5)))
+
 			cam.PushModelMatrix(self.mtrx)
 		end,
 		TagEnd = function(self)
@@ -159,7 +163,11 @@ chathud.Tags = {
 		end,
 		Draw = function(self, markup, buffer, args)
 			self.mtrx:SetTranslation(Vector(chathud.x, markup.y))
-			self.mtrx:SetScale(Vector(args[1], args[2]))
+
+			self.mtrx:Translate(Vector(buffer.x, buffer.y + (buffer.h * 0.5)))
+				self.mtrx:Scale(Vector(args[1], args[2]))
+			self.mtrx:Translate(-Vector(buffer.x, buffer.y + (buffer.h * 0.5)))
+
 			cam.PushModelMatrix(self.mtrx)
 		end,
 		TagEnd = function(self)
