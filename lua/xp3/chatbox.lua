@@ -210,6 +210,11 @@ local function input_type(enter, tab, all)
 			pan.HistoryPos = pan.HistoryPos + 1
 			pan:UpdateFromHistory()
 		end
+
+		if key == KEY_ESCAPE then
+			pan.HistoryPos = 0
+			pan:UpdateFromHistory()
+		end
 	end
 end
 
