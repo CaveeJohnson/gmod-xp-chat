@@ -520,11 +520,26 @@ function Expression:__ctor(expression, filter)
 	self.resfilter = filter
 end
 
+local bad_keywords = {
+	"break",     "do",        "else",      "elseif",    "end",
+	"false",     "for",       "function",  "if",        "in",
+	"repeat",    "return",    "then",      "until",     "while",
+	"local",
+}
+
 function Expression:Compile()
 	local env, expression = env(), self.expression
+
 	local ch = expression:match("[^=1234567890%-%+%*/%%%^%(%)%.A-z%s]")
 	if ch then
 		return "expression:1: invalid character " .. ch
+	end
+
+	for _, keyword in ipairs(bad_keywords) do
+		local ch = expression:match("[^A-z]" .. keyword .. "[^A-z]") or expression:match("^" .. keyword .. "[^A-z]")
+		if ch then
+			return "expression:1: keywords are not allowed " .. ch
+		end
 	end
 
 	local compiled = CompileString("return (" .. expression .. ")", "expression", false)

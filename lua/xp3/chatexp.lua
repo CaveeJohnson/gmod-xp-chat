@@ -145,7 +145,7 @@ if CLIENT then
 		local mode 	= net.ReadUInt(8)
 		local mode_data = net.ReadUInt(16)
 
-		data = util.Decompress(data)
+		data = util.Decompress(data, 1024)
 
 		if not data then
 			Msg"CEXP " print"Failed to decompress message."
@@ -220,7 +220,7 @@ else -- CLIENT
 		local mode	= net.ReadUInt(8)
 		local mode_data = net.ReadUInt(16)
 
-		local data = util.Decompress(cdata)
+		local data = util.Decompress(cdata, 1024)
 
 		if not data then
 			Msg"CEXP " print"Failed to decompress message."
