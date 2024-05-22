@@ -25,14 +25,36 @@
 --- luajit bytecode firewall --
 local opcode_checker
 do
-	local bcnames = "ISLT  ISGE  ISLE  ISGT  ISEQV ISNEV ISEQS ISNES ISEQN ISNEN ISEQP ISNEP ISTC  ISFC  IST   ISF   MOV   NOT   UNM   LEN   ADDVN SUBVN MULVN DIVVN MODVN ADDNV SUBNV MULNV DIVNV MODNV ADDVV SUBVV MULVV DIVVV MODVV POW   CAT   KSTR  KCDATAKSHORTKNUM  KPRI  KNIL  UGET  USETV USETS USETN USETP UCLO  FNEW  TNEW  TDUP  GGET  GSET  TGETV TGETS TGETB TSETV TSETS TSETB TSETM CALLM CALL  CALLMTCALLT ITERC ITERN VARG  ISNEXTRETM  RET   RET0  RET1  FORI  JFORI FORL  IFORL JFORL ITERL IITERLJITERLLOOP  ILOOP JLOOP JMP   FUNCF IFUNCFJFUNCFFUNCV IFUNCVJFUNCVFUNCC FUNCCW"
+	local bcnames
+
 	local jit = jit or require("jit")
-	local ver = jit.version_num
-	if ver < 20000 or ver> 20009 then
-		ErrorNoHalt"LUADATA SECURITY WARNING: Unable to load verifier, update me!\n"
+	local ver = jit and jit.version_num or 0
+
+	-- what are these magic versions?
+	if ver >= 20000 and ver <= 20009 then
+		bcnames = "ISLT  ISGE  ISLE  ISGT  ISEQV ISNEV ISEQS ISNES ISEQN ISNEN ISEQP ISNEP ISTC  ISFC  IST   ISF   MOV   NOT   UNM   LEN   ADDVN SUBVN MULVN DIVVN MODVN ADDNV SUBNV MULNV DIVNV MODNV ADDVV SUBVV MULVV DIVVV MODVV POW   CAT   KSTR  KCDATAKSHORTKNUM  KPRI  KNIL  UGET  USETV USETS USETN USETP UCLO  FNEW  TNEW  TDUP  GGET  GSET  TGETV TGETS TGETB TSETV TSETS TSETB TSETM CALLM CALL  CALLMTCALLT ITERC ITERN VARG  ISNEXTRETM  RET   RET0  RET1  FORI  JFORI FORL  IFORL JFORL ITERL IITERLJITERLLOOP  ILOOP JLOOP JMP   FUNCF IFUNCFJFUNCFFUNCV IFUNCVJFUNCVFUNCC FUNCCW"
+	elseif ver==20100 then -- LuaJIT 2.1.0-beta3
+		bcnames = "ISLT  ISGE  ISLE  ISGT  ISEQV ISNEV ISEQS ISNES ISEQN ISNEN ISEQP ISNEP ISTC  ISFC  IST   ISF   ISTYPEISNUM MOV   NOT   UNM   LEN   ADDVN SUBVN MULVN DIVVN MODVN ADDNV SUBNV MULNV DIVNV MODNV ADDVV SUBVV MULVV DIVVV MODVV POW   CAT   KSTR  KCDATAKSHORTKNUM  KPRI  KNIL  UGET  USETV USETS USETN USETP UCLO  FNEW  TNEW  TDUP  GGET  GSET  TGETV TGETS TGETB TGETR TSETV TSETS TSETB TSETM TSETR CALLM CALL  CALLMTCALLT ITERC ITERN VARG  ISNEXTRETM  RET   RET0  RET1  FORI  JFORI FORL  IFORL JFORL ITERL IITERLJITERLLOOP  ILOOP JLOOP JMP   FUNCF IFUNCFJFUNCFFUNCV IFUNCVJFUNCVFUNCC FUNCCW"
+	end
+
+	local jutil = jit.util
+	if not jutil then
+		local ok, _jutil = pcall(require,'jit.util')
+		if not ok then
+			bcnames = nil
+		else
+			jutil = _jutil
+		end
+	end
+
+	if not bcnames then
+		if not jutil then
+			print("[luadata] Verifier could not be loaded. luadata may cause infinite loops.")
+		else
+			ErrorNoHalt"LUADATA SECURITY WARNING: Unable to load verifier, update me!\n"
+		end
 		opcode_checker = function() return function() return true end end
 	else
-		local jutil = jit.util or require'jit.util'
 		local band =  bit.band
 
 		local opcodes = {}
@@ -57,7 +79,7 @@ do
 
 		local function getop(func, pc)
 			local ins = jutil.funcbc(func, pc)
-			return ins and (band(ins, 0xff) + 1)
+			return ins and (band(ins, 0xff)+1)
 		end
 
 
@@ -137,14 +159,24 @@ KNUM
 KPRI
 KNIL
 
+UNM
+
 GGET
 CALL
-RET1
-
-UNM]]
+RET1]]
 
 local is_func_ok = opcode_checker(whitelist)
-local luadata = _G.luadata or {} local s = luadata -- self
+
+-------------------------------
+
+
+
+
+
+
+local luadata = {}
+local s = luadata
+luadata.is_func_ok = is_func_ok
 
 luadata.EscapeSequences = {
 	[("\a"):byte()] = [[\a]],
@@ -173,28 +205,12 @@ luadata.Types = {
 	["Angle"] = function(var)
 		return ("Angle(%s, %s, %s)"):format(var.p, var.y, var.r)
 	end,
-
---[[ 	-- comment these out if you don't want shit like this to be storeable
-	["Entity"] = function(var)
-		if var:IsPlayer() then
-			return ("player.GetByUniqueID(%q)"):format(var:UniqueID())
-		end
-
-		return ("Entity(%i)"):format(var:EntIndex())
-	end,
-	["Panel"] = function(var)
-		return "NULL"
-	end,
-	["NULL"] = function(var)
-		return "NULL"
-	end, ]]
-
 	["table"] = function(var)
 		if
-			type(var.r) == "number" and
-			type(var.g) == "number" and
-			type(var.b) == "number" and
-			type(var.a) == "number"
+			isnumber(var.r) and
+			isnumber(var.g) and
+			isnumber(var.b) and
+			isnumber(var.a)
 		then
 			return ("Color(%s, %s, %s, %s)"):format(var.r, var.g, var.b, var.a)
 		end
@@ -213,7 +229,7 @@ end
 function luadata.Type(var)
 	local t
 
-	if IsEntity and IsEntity(var) then
+	if IsEntity(var) then
 		if var:IsValid() then
 			t = "Entity"
 		else
@@ -257,49 +273,49 @@ function luadata.Encode(tbl, __brackets)
 end
 
 local env = {
-	Vector = Vector,
-	Angle  = Angle,
-	Color  = Color,
+	Vector=Vector,
+	Angle=Angle,
+	Color=Color,
 	--Entity=Entity,
 }
 
 -- TODO: Bytecode analysis for bad loop and string functions?
-function luadata.Decode(str, nojail)
-	local func = CompileString(string.format("return {\n%s\n}", str), "luadata_decode", false)
+function luadata.Decode(str,nojail)
+	local func = CompileString(string.format("return { %s }",str), "luadata_decode", false)
 
-	if type(func) == "string" then
-		ErrorNoHalt("Luadata decode syntax: "..tostring(func):gsub("^luadata_decode","")..'\n')
+	if isstring(func) then
+		--ErrorNoHalt("Luadata decode syntax: "..tostring(func):gsub("^luadata_decode","")..'\n')
 
-		return {}, func
+		return nil,func
 	end
 
 	if not nojail then
-		setfenv(func, env)
+		setfenv(func,env)
 	elseif istable(nojail) then
-		setfenv(func, nojail)
+		setfenv(func,nojail)
 	elseif isfunction(nojail) then
-		nojail(func)
+		nojail( func )
 	end
 
 
-	local ok, err = is_func_ok(func)
+	local ok,err = is_func_ok( func )
 	if not ok or err then
 		err = err or "invalid opcodes detected"
-		ErrorNoHalt("Luadata opcode: "..tostring(err):gsub("^luadata_decode","")..'\n')
+		--ErrorNoHalt("Luadata opcode: "..tostring(err):gsub("^luadata_decode","")..'\n')
 
-		return {}, err
+		return nil,err
 	end
 
-	local ok, err = pcall(func)
+	local ok, err = xpcall(func,debug.traceback)
 
 	if not ok then
-		ErrorNoHalt("Luadata decode: "..tostring(err):gsub("^luadata_decode","")..'\n')
+		--ErrorNoHalt("Luadata decode: "..tostring(err):gsub("^luadata_decode","")..'\n')
 
-		return {}, err
+		return nil,err
 	end
 
 	if isfunction(nojail) then
-		nojail(func, err)
+		nojail( func, err )
 	end
 
 	return err
@@ -307,96 +323,26 @@ end
 
 do -- file extension
 	function luadata.WriteFile(path, tbl)
-		file.Write(path, luadata.Encode(tbl))
-	end
-
-	function luadata.ReadFile(path)
-		return luadata.Decode(file.Read(path) or "")
-	end
-
-	function luadata.SetKeyValueInFile(path, key, value)
-		local tbl = luadata.ReadFile(path)
-		tbl[key] = value
-		luadata.WriteFile(path, tbl)
-	end
-
-	function luadata.GetKeyFromFile(path, key, def)
-		return luadata.ReadFile(path)[key] or def
-	end
-
-	function luadata.AppendToFile(path, value)
-		local tbl = luadata.ReadFile(path)
-		table.insert(tbl, value)
-		luadata.WriteFile(path, tbl)
-	end
-end
-
-do -- option extension
-	function luadata.AccessorFunc(tbl, func_name, var_name, nw, def)
-		tbl["Set" .. func_name] = function(self, val)
-			self[nw and "SetLuaDataNWOption" or "SetLuaDataOption"](self, var_name, val or def)
-		end
-
-		tbl["Get" .. func_name] = function(self, val)
-			return self[nw and "GetLuaDataNWOption" or "GetLuaDataOption"](self, var_name, def)
-		end
-	end
-
-	local meta = FindMetaTable("Player")
-
-	function meta:LoadLuaDataOptions()
-		self.LuaDataOptions = luadata.ReadFile("luadata_options/" .. self:UniqueID() .. ".txt")
-
-		for key, value in pairs(self.LuaDataOptions) do
-			if key:sub(0, 3) == "_nw" then
-				self:SetNWString("ld_" .. key:sub(4), glon.encode(value))
+		if tbl==nil or false --[[empty table!?]] then
+			if file.Exists(path,'DATA') then
+				file.Delete(path,'DATA')
+				return true
 			end
+			return false,"file does not exist"
 		end
+		local encoded = luadata.Encode(tbl)
+		file.Write(path, encoded)
+		--if not file.Exists(path,'DATA') then return false,"could not write" end
+		return encoded
 	end
 
-	if SERVER then
-		hook.Add("OnEntityCreated", "luadata_player_spawn", function(ply)
-			if ply:IsValid() and FindMetaTable("Player") == getmetatable(ply) then
-				ply:LoadLuaDataOptions()
-			end
-		end)
-	end
-
-	function meta:SaveLuaDataOptions()
-		file.CreateDir("luadata_options")
-		luadata.WriteFile("luadata_options/" .. self:UniqueID() .. ".txt", self.LuaDataOptions)
-	end
-
-	function meta:SetLuaDataOption(key, value)
-		if not self.LuaDataOptions then self:LoadLuaDataOptions() end
-		self.LuaDataOptions[key] = value
-		self:SaveLuaDataOptions()
-	end
-
-	function meta:GetLuaDataOption(key, def)
-		if not self.LuaDataOptions then self:LoadLuaDataOptions() end
-		return self.LuaDataOptions[key] or def
-	end
-
-	function meta:SetLuaDataNWOption(key, value)
-		self:SetLuaDataOption("_nw"..key, value)
-		self:SetNWString("ld_" .. key, glon.encode(value))
-	end
-
-	function meta:GetLuaDataNWOption(key, def)
-		local value
-
-		if SERVER then
-			value = self:GetLuaDataOption("_nw"..key)
-
-			if value then
-				return value
-			end
+	function luadata.ReadFile(path,location,noinvalid)
+		local file = file.Read(path,location or 'DATA')
+		if not file then
+			if noinvalid then return end
+			return false,"invalid file"
 		end
-
-		value = self:GetNWString("ld_" .. key, false)
-
-		return type(value) == "string" and glon.decode(value) or def
+		return luadata.Decode(file)
 	end
 end
 
