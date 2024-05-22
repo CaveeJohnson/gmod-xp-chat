@@ -132,6 +132,7 @@ local function do_hook()
 		return end
 
 		if type == "darkrp" then return end -- Compat for some weird stuff with darkrp
+		if type == "joinleave" then return true end
 
 		chatbox.ParseInto(chatbox.GetChatFeed(), green, text)
 		chathud:AddText(green, text)
